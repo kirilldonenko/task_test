@@ -45,6 +45,7 @@ export default {
   name: "ProductsTable",
   data: () => ({
     products: [],
+    currentIndex: 0,
   }),
   async mounted () {
     await fetch('https://raw.githubusercontent.com/OlegFomishyn/test-data/main/products.json').then(res => res.json()).then(data => this.products = data);
@@ -53,20 +54,17 @@ export default {
   },
   methods: {
     flatProducts (arr) {
-      let recursionNeed = false;
-      arr.forEach((item, index) => {
-        if (typeof item.included === 'object') {
-          arr.splice(index + 1, 0, ...item.included);
-          item.included = item.isPackage = 'Yes';
-          recursionNeed = true;
-        } else if (!('included' in item)) {
+      arr.map((item, index) => {
+        if ('included' in item) {
+          this.currentIndex += (index + 1);
+          this.products.splice(this.currentIndex, 0, ...item.included);
+          item.isPackage = 'Yes';
+          this.flatProducts(item.included)
+        } else {
           item.isPackage = 'No';
         }
-        item.price = typeof item.price === 'string' ? item.price : ('$' + Number(item.price) / 100);
+        item.price = '$' + Number(item.price) / 100;
       })
-      if (recursionNeed) {
-        this.flatProducts(arr);
-      }
     },
     uniqueArray (a) {
       return [...new Set(a.map(o => JSON.stringify(o)))].map(s => JSON.parse(s));
